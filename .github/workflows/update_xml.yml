@@ -1,0 +1,41 @@
+name: Update Baselinker Feeds
+
+on:
+  schedule:
+    - cron: '0 */4 * * *' # Spustí sa každé 4 hodiny
+  workflow_dispatch:      # Umožní ručné spustenie
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install pandas requests
+
+    - name: Run translation script
+      run: |
+        # POZOR: Názov skriptu musí sedieť s tým, čo si nahral
+        python translate_stock_bl_modulo.py
+
+    - name: Force Push changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add feed_part_*.xml
+        git commit --amend -m "Auto-update XML feeds" --no-edit || git commit -m "Auto-update XML feeds"
+        git push origin main --force
